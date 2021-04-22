@@ -1,5 +1,7 @@
 import { Router } from 'express';
+
 import SettingsController from './controllers/SettingsController';
+import UserController from './controllers/UserController';
 
 const routes = Router();
 
@@ -12,5 +14,6 @@ const routes = Router();
  */
 
 routes.post("/settings", SettingsController.create);
+routes.post("/users", UserController.create)
 
 export { routes };
