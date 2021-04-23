@@ -4,9 +4,10 @@ import { User } from '../entities/User';
 import { UserRepository } from '../repositories/UserRepository';
 
 class UserService {
+
   private userRepository: Repository<User>
 
-  constructor(){
+  constructor() {
     this.userRepository = getCustomRepository(UserRepository);
   }
 
@@ -24,6 +25,12 @@ class UserService {
     await this.userRepository.save(user);
     return user;
   }
+
+  async findByEmail(email: string) {
+    const user = await this.userRepository.findOne({ email });
+    return user;
+  }
+
 
 }
 
