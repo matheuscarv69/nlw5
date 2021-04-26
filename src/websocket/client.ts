@@ -1,7 +1,7 @@
-import { io } from '../http';
-import { ConnectionService } from '../services/ConnectionService';
-import { UserService } from '../services/UserService';
-import { MessageService } from '../services/MessageService';
+import { io } from "../http";
+import { ConnectionService } from "../services/ConnectionService";
+import { UserService } from "../services/UserService";
+import { MessageService } from "../services/MessageService";
 
 interface IParams {
   text: string;
@@ -9,22 +9,21 @@ interface IParams {
 }
 
 io.on("connect", (socket) => {
-  const connectionService = new ConnectionService();
-  const userService = new UserService();
-  const messageService = new MessageService();
+  const connectionsService = new ConnectionService();
+  const usersService = new UserService();
+  const messagesService = new MessageService();
 
   socket.on("client_first_access", async (params) => {
     const socket_id = socket.id;
     const { text, email } = params as IParams;
     let user_id = null;
 
-    const userExists = await userService.findByEmail(email);
+    const userExists = await usersService.findByEmail(email);
 
-    // Salvar a conexão com o socket_id e user_id
     if (!userExists) {
-      const user = await userService.create(email);
+      const user = await usersService.create(email);
 
-      await connectionService.create({
+      await connectionsService.create({
         socket_id,
         user_id: user.id,
       });
@@ -33,29 +32,31 @@ io.on("connect", (socket) => {
     } else {
       user_id = userExists.id;
 
-      const connection = await connectionService.findByUserId(userExists.id);
+      const connection = await connectionsService.findByUserId(userExists.id);
 
       if (!connection) {
-        await connectionService.create({
+        await connectionsService.create({
           socket_id,
           user_id: userExists.id,
         });
       } else {
         connection.socket_id = socket_id;
-        await connectionService.create(connection);
+
+        await connectionsService.create(connection);
       }
     }
 
-    await messageService.create({
+    await messagesService.create({
       text,
       user_id,
     });
 
-    const allMessages = await messageService.listByUser(user_id);
-    socket.emit('client_list_all_messages', allMessages);
+    const allMessages = await messagesService.listByUser(user_id);
 
-    const allUsers = await connectionService.findAllWithoutAdmin();
-    io.emit("client_list_all_users", allUsers);
+    socket.emit("client_list_all_messages", allMessages);
+
+    const allUsers = await connectionsService.findAllWithoutAdmin();
+    io.emit("admin_list_all_users", allUsers);
   });
 
   socket.on("client_send_to_admin", async (params) => {
@@ -63,18 +64,18 @@ io.on("connect", (socket) => {
 
     const socket_id = socket.id;
 
-    const {user_id} = await connectionService.findBySocketId(socket_id);
+    const { user_id } = await connectionsService.findBySocketId(socket_id);
 
-    const message = await messageService.create({
+    const message = await messagesService.create({
       text,
-      user_id
+      user_id,
     });
 
     io.to(socket_admin_id).emit("admin_receive_message", {
       message,
-      socket_id
+      socket_id,
     });
 
-  })
-
+  });
+  
 });
