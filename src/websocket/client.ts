@@ -1,4 +1,4 @@
-import { io } from "../http";
+import Http from "../http";
 import { ConnectionService } from "../services/ConnectionService";
 import { UserService } from "../services/UserService";
 import { MessageService } from "../services/MessageService";
@@ -8,7 +8,7 @@ interface IParams {
   email: string;
 }
 
-io.on("connect", (socket) => {
+Http.io.on("connect", (socket) => {
   const connectionsService = new ConnectionService();
   const usersService = new UserService();
   const messagesService = new MessageService();
@@ -56,7 +56,7 @@ io.on("connect", (socket) => {
     socket.emit("client_list_all_messages", allMessages);
 
     const allUsers = await connectionsService.findAllWithoutAdmin();
-    io.emit("admin_list_all_users", allUsers);
+    Http.io.emit("admin_list_all_users", allUsers);
   });
 
   socket.on("client_send_to_admin", async (params) => {
@@ -71,11 +71,11 @@ io.on("connect", (socket) => {
       user_id,
     });
 
-    io.to(socket_admin_id).emit("admin_receive_message", {
+    Http.io.to(socket_admin_id).emit("admin_receive_message", {
       message,
       socket_id,
     });
 
   });
-  
+
 });
